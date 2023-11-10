@@ -16,7 +16,7 @@ import requests
 # GPT_MODEL = "gpt-4-1106-preview"
 GPT_MODEL = "gpt-3.5-turbo-16k-0613"
 seed = 42
-API_KEY = "---"
+API_KEY = "--"
 client = OpenAI(api_key=API_KEY)
 def call_chatgpt(prompt, context, max_tokens=1000):
     """
@@ -77,7 +77,7 @@ def call_chatgpt(prompt, context, max_tokens=1000):
     #     # If the request was not successful, print the error
     #     return f"Error: {response.status_code}, {response.text}"
 
-def create_adversarial_context(context, percentage=40):
+def create_adversarial_context(context, percentage=50):
     # use call_GPT to generate adversarial context
     prompt = "Paraphrase the following with following Augmentation." \
                 "1. Add contractions and negation words"\
@@ -101,6 +101,31 @@ def create_adversarial_contexts(contexts, percentage=20):
             adversarial_contexts.append((context[0], ad_context))
     return adversarial_contexts
 
+def convert_json(in_json):
+    test_set = []
+    for article in in_json['data']:
+        t_set = {}
+        for paragraph in article['paragraphs']:
+            for qa in paragraph['qas']:
+                t_set = {}
+                t_set['id'] = qa['id']
+                t_set['title'] = article['title']
+                t_set['context'] = paragraph['context']
+                t_set['question'] = qa['question']
+                text = []
+                ans_start = []
+                for ans in qa['answers']:
+                    text.append(ans['text'])
+                    ans_start.append(ans['answer_start'])
+                    
+                t_set['answers'] = {
+                    'text': text,
+                    'answer_start': ans_start
+                }
+                test_set.append(t_set)
+
+    return test_set
+
 def create_adversarial_dataset(original_file_path, adversarial_file_path, percent_context_to_change=20):
     with open(original_file_path, 'r') as file:
         squad_data = json.load(file)
@@ -113,8 +138,8 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
     random.shuffle(contexts)
 
     # extract the first percent_context_to_change% of contexts to change
-    # num_contexts_to_change = len(contexts) * percent_context_to_change // 100
-    num_contexts_to_change = 1
+    num_contexts_to_change = len(contexts) * percent_context_to_change // 100
+    # num_contexts_to_change = 1
     adversarial_contexts = create_adversarial_contexts(contexts[:num_contexts_to_change])
     
     # Replace original contexts with adversarial ones
@@ -132,13 +157,11 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
                     break
         if context_counter == num_contexts_to_change:
             break
-    # for article in squad_data['data']:
-    #     for paragraph in article['paragraphs']:
-    #         if context_counter < num_contexts_to_change:
-    #             paragraph['context'] = adversarial_contexts[context_counter]
-    #             context_counter += 1
     
-    # Write the modified dataset to a new file
+    # convert data to the format required by the model
+
+    squad_data = convert_json(squad_data)
+
     with open(adversarial_file_path, 'w') as file:
         json.dump(squad_data, file)
 
@@ -146,6 +169,8 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
 if __name__ == "__main__":
     # Prompt for a question
     orig_file_path = './Squad/dev-v1.1.json'
-    out_file_path = './Squad/dev-v1.1-adversarial.json'
+    out_file_path = './Squad/dev-v1.1-adversarial-40.json'
+    percent_context_to_change = 40
     create_adversarial_dataset(original_file_path=orig_file_path, 
-                               adversarial_file_path=out_file_path)
+                               adversarial_file_path=out_file_path,
+                               percent_context_to_change=percent_context_to_change)
