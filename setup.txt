@@ -1,0 +1,37 @@
+
+# Instance 
+i-06954009a3da34453 - g5-4x
+i-0d4599e05f63a423e - p4-2x
+
+# install git 
+sudo yum install git-all
+# get code
+git clone https://github.com/manishSan/MCSO-NLP-fp-dataset-artifacts.git
+
+# install pip 
+# -> https://pip.pypa.io/en/stable/installation/
+# python -m ensurepip --upgrade
+# https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install-linux.html
+mkdir pip
+cd pip
+curl -O https://bootstrap.pypa.io/get-pip.py
+python3 get-pip.py --user
+
+# set up env
+pip install -r requirements.txt
+
+# check disk size
+df -h
+
+
+# train NLI
+`python3 run.py --do_train --task nli --dataset snli --output_dir ./trained_model_nli/`
+# eval NLI 
+`python3 run.py --do_eval --task nli --dataset snli --model ./trained_model_nli/ --output_dir ./eval_output_nli/`
+
+
+# train QA
+`python3 run.py --do_train --task qa --dataset squad --output_dir ./trained_model_qa/`
+`python3 run.py --do_train --task qa --dataset squad --output_dir ./trained_model_qa/ --per_device_train_batch_size 128`
+# eval QA
+`python3 run.py --do_eval --task qa --dataset squad --model ./trained_model_qa/ --output_dir ./eval_output_qa/`
