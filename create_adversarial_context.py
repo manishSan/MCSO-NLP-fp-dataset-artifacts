@@ -16,7 +16,7 @@ import requests
 # GPT_MODEL = "gpt-4-1106-preview"
 GPT_MODEL = "gpt-3.5-turbo-16k-0613"
 seed = 42
-API_KEY = "--"
+API_KEY = "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"
 client = OpenAI(api_key=API_KEY)
 def call_chatgpt(prompt, context, max_tokens=1000):
     """
@@ -35,7 +35,7 @@ def call_chatgpt(prompt, context, max_tokens=1000):
         messages=messages,
         seed=seed,
         max_tokens=max_tokens,
-        temperature=0.7,
+        temperature=0.9,
         # response_json=True,
         # response_format='{ "type": "json_object" }'
     )
@@ -80,10 +80,13 @@ def call_chatgpt(prompt, context, max_tokens=1000):
 def create_adversarial_context(context, percentage=50):
     # use call_GPT to generate adversarial context
     prompt = "Paraphrase the following with following Augmentation." \
-                "1. Add contractions and negation words"\
-                "2. Add synonyms and antonyms"\
-                "3. Add noise - sentences that are not related to paragraph but they could confuse model"\
-                "Make sure the meaning of sentences and overall meaning and sentiment doesn't change."\
+                '1. Paraphrasing: Rewriting sentences to change their structure without changing their meaning.'\
+                '2. Negation: Adding negation to reverse the meaning of sentences.'\
+                '3. Noise Injection: Introducing spelling errors, grammatical mistakes, or typographical errors.'\
+                '4. Distraction: Adding irrelevant information to the premise or hypothesis to distract the model.'\
+                '5. Word Swapping: Replacing words or phrases with synonyms, antonyms, or related terms to test understanding.'\
+                '6. Contradiction: Creating contradictions within the hypothesis or between the premise and hypothesis.'\
+                "Make sure the meaning of sentences and overall meaning and sentiment does not change."\
                 "Keep the length of the generated response almost the same as the input context"
                 # "Always return a valid JSON in response"
     
@@ -169,8 +172,8 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
 if __name__ == "__main__":
     # Prompt for a question
     orig_file_path = './Squad/dev-v1.1.json'
-    out_file_path = './Squad/dev-v1.1-adversarial-40.json'
-    percent_context_to_change = 40
+    out_file_path = './Squad/dev-v1.1-adversarial-20.json'
+    percent_context_to_change = 20
     create_adversarial_dataset(original_file_path=orig_file_path, 
                                adversarial_file_path=out_file_path,
                                percent_context_to_change=percent_context_to_change)
