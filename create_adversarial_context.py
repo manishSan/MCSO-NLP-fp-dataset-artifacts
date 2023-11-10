@@ -16,7 +16,7 @@ import requests
 # GPT_MODEL = "gpt-4-1106-preview"
 GPT_MODEL = "gpt-3.5-turbo-16k-0613"
 seed = 42
-API_KEY = "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"
+API_KEY = "---"
 client = OpenAI(api_key=API_KEY)
 def call_chatgpt(prompt, context, max_tokens=1000):
     """
@@ -97,7 +97,7 @@ def create_adversarial_contexts(contexts, percentage=20):
     print('Contexts to update - ', len(contexts))
     for context in contexts:
         ad_context = create_adversarial_context(context[1], percentage)
-        if ad_context is None:
+        if not ad_context is None:
             adversarial_contexts.append((context[0], ad_context))
     return adversarial_contexts
 
@@ -113,7 +113,8 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
     random.shuffle(contexts)
 
     # extract the first percent_context_to_change% of contexts to change
-    num_contexts_to_change = len(contexts) * percent_context_to_change // 100
+    # num_contexts_to_change = len(contexts) * percent_context_to_change // 100
+    num_contexts_to_change = 1
     adversarial_contexts = create_adversarial_contexts(contexts[:num_contexts_to_change])
     
     # Replace original contexts with adversarial ones
@@ -129,7 +130,8 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
                     paragraph['context'] = ad_context[1]
                     context_counter += 1
                     break
-    
+        if context_counter == num_contexts_to_change:
+            break
     # for article in squad_data['data']:
     #     for paragraph in article['paragraphs']:
     #         if context_counter < num_contexts_to_change:
