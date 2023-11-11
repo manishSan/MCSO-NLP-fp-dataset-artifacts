@@ -136,8 +136,8 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
     random.shuffle(contexts)
 
     # extract the first percent_context_to_change% of contexts to change
-    num_contexts_to_change = len(contexts) * percent_context_to_change // 100
-    # num_contexts_to_change = 1
+    # num_contexts_to_change = len(contexts) * percent_context_to_change // 100
+    num_contexts_to_change = 1
     adversarial_contexts = create_adversarial_contexts(contexts[:num_contexts_to_change])
     
     # Replace original contexts with adversarial ones
