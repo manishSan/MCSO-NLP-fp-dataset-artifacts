@@ -167,8 +167,8 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
 if __name__ == "__main__":
     # Prompt for a question
     orig_file_path = './Squad/dev-v1.1.json'
-    out_file_path = './Squad/dev-v1.1-adversarial-20.json'
-    percent_context_to_change = 20
+    out_file_path = './Squad/dev-v1.1-adversarial-50.json'
+    percent_context_to_change = 50
     create_adversarial_dataset(original_file_path=orig_file_path, 
                                adversarial_file_path=out_file_path,
                                percent_context_to_change=percent_context_to_change)
