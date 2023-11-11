@@ -16,7 +16,7 @@ import requests
 # GPT_MODEL = "gpt-4-1106-preview"
 GPT_MODEL = "gpt-3.5-turbo-16k-0613"
 seed = 42
-API_KEY = "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"
+API_KEY = "--"
 client = OpenAI(api_key=API_KEY)
 def call_chatgpt(prompt, context, max_tokens=1000):
     """
@@ -136,8 +136,8 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
     random.shuffle(contexts)
 
     # extract the first percent_context_to_change% of contexts to change
-    # num_contexts_to_change = len(contexts) * percent_context_to_change // 100
-    num_contexts_to_change = 1
+    num_contexts_to_change = len(contexts) * percent_context_to_change // 100
+    # num_contexts_to_change = 1
     adversarial_contexts = create_adversarial_contexts(contexts[:num_contexts_to_change])
     
     # Replace original contexts with adversarial ones
