@@ -48,7 +48,7 @@ def reformat_json(original_file_path, out_file_path):
 # define the main entry point of the script
 if __name__ == "__main__":
     # Prompt for a question
-    orig_file_path = './Squad/dev-v1.1-adversarial.json'
-    out_file_path = './Squad/dev-v1.1-adversarial-reformatted.json'
+    orig_file_path = './Squad/dev-v1.1.json'
+    out_file_path = './Squad/dev-v1.1-reformatted.json'
     reformat_json(original_file_path=orig_file_path, 
                                out_file_path=out_file_path)
