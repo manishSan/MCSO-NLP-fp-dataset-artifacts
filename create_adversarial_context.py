@@ -16,7 +16,7 @@ import requests
 # GPT_MODEL = "gpt-4-1106-preview"
 GPT_MODEL = "gpt-3.5-turbo-16k-0613"
 seed = 42
-API_KEY = "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"
+API_KEY = "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"
 client = OpenAI(api_key=API_KEY)
 def call_chatgpt(prompt, context, max_tokens=1000):
     """
@@ -79,20 +79,15 @@ def call_chatgpt(prompt, context, max_tokens=1000):
 
 def create_adversarial_context(context, percentage=50):
     # use call_GPT to generate adversarial context
-    prompt = "Paraphrase the following with following Augmentation." \
-                '1. Paraphrasing: Rewriting sentences to change their structure without changing their meaning.'\
-                '2. Negation: Adding negation to reverse the meaning of sentences.'\
-                '3. Noise Injection: Introducing spelling errors, grammatical mistakes, or typographical errors.'\
-                '4. Distraction: Adding irrelevant information to the premise or hypothesis to distract the model.'\
-                '5. Word Swapping: Replacing words or phrases with synonyms, antonyms, or related terms to test understanding.'\
-                '6. Contradiction: Creating contradictions within the hypothesis or between the premise and hypothesis.'\
-                "Make sure the meaning of sentences and overall meaning and sentiment does not change."\
-                "Keep the length of the generated response almost the same as the input context"
+    prompt = "Create an adversarial context for the following passage without changing the meaning."\
+            "You can use techniques like, Paraphrasing, Negation, Noise Injection, Distraction (introducing words like Why, what, who, because etc. in between),"\
+            "Word Swapping(adding synonyms and antonyms) and Contradictions. "\
+            "Keep the length of output roughly similar to input, but make sure the meaning of the passage doesn't change - "
                 # "Always return a valid JSON in response"
     
-    # prompt = prompt + "\n" + context
+    prompt = prompt + "\n" + context
     
-    adversarial_prompt = call_chatgpt(prompt, context)
+    adversarial_prompt = call_chatgpt("You are a AI research assistance, working on evaluating Language Models.", context)
     return adversarial_prompt
 
 def create_adversarial_contexts(contexts, percentage=20):
