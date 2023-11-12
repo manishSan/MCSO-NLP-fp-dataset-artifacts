@@ -16,7 +16,7 @@ import requests
 # GPT_MODEL = "gpt-4-1106-preview"
 GPT_MODEL = "gpt-3.5-turbo-16k-0613"
 seed = 42
-API_KEY = "--"
+API_KEY = "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"
 client = OpenAI(api_key=API_KEY)
 def call_chatgpt(prompt, context, max_tokens=1000):
     """
@@ -124,7 +124,7 @@ def convert_json(in_json):
 
     return test_set
 
-def create_adversarial_dataset(original_file_path, adversarial_file_path, percent_context_to_change=20):
+def create_adversarial_dataset(original_file_path, adversarial_file_path, percent_context_to_change=20, save_only_changed_contexts=False):
     with open(original_file_path, 'r') as file:
         squad_data = json.load(file)
     
@@ -139,7 +139,14 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
     num_contexts_to_change = len(contexts) * percent_context_to_change // 100
     # num_contexts_to_change = 1
     adversarial_contexts = create_adversarial_contexts(contexts[:num_contexts_to_change])
-    
+
+    # Save the adversarial contexts
+    if save_only_changed_contexts:
+        with open(adversarial_file_path, 'w') as file:
+            json.dump(adversarial_contexts, file)
+        return
+
+    # else 
     # Replace original contexts with adversarial ones
     # we can use the hash to identify the context
     context_counter = 0
@@ -166,9 +173,10 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
 # define the main entry point of the script
 if __name__ == "__main__":
     # Prompt for a question
-    orig_file_path = './Squad/dev-v1.1.json'
-    out_file_path = './Squad/dev-v1.1-adversarial-50.json'
+    orig_file_path = './Squad/train-v1.1.json'
+    out_file_path = './Squad/train-v1.1-adversarial-50-diff.json'
     percent_context_to_change = 50
     create_adversarial_dataset(original_file_path=orig_file_path, 
                                adversarial_file_path=out_file_path,
-                               percent_context_to_change=percent_context_to_change)
+                               percent_context_to_change=percent_context_to_change,
+                               save_only_changed_contexts=True)
