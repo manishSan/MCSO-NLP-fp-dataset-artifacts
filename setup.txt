@@ -37,3 +37,7 @@ df -h
 `python3 run.py --do_eval --task qa --dataset squad --model ./trained_model_qa/ --output_dir ./eval_output_qa/`
 # eval QA local file
 'python3 run.py --do_eval --task qa --dataset ./Squad/dev-v1.1-adversarial.json --model ./trained_model_qa/ --output_dir ./eval_output_qa_adversarial/'
+
+
+# Train from checkpoint
+`python3 run.py --model ./trained_model_qa --do_train --task qa --dataset ./Squad/train-v1.1-adversarial-50-diff.json --output_dir ./trained_model_qa_advarsarial/ --per_device_train_batch_size 128`
