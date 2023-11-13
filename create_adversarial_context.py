@@ -1,6 +1,9 @@
 import json
 import random
 from openai import OpenAI
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import as_completed
+from tqdm import tqdm
 
 def modify_sentence(sentence):
     # TODO: Implement sentence modification logic here
@@ -16,7 +19,7 @@ import requests
 # GPT_MODEL = "gpt-4-1106-preview"
 GPT_MODEL = "gpt-3.5-turbo-16k-0613"
 seed = 42
-API_KEY = "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"
+API_KEY = "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"
 client = OpenAI(api_key=API_KEY)
 def call_chatgpt(prompt, context, max_tokens=1000):
     """
@@ -43,39 +46,8 @@ def call_chatgpt(prompt, context, max_tokens=1000):
         print(response['error'])
         return None 
     else: 
-        print("ChatGPT request successful")
+        print("ChatGPT request successful with status code")
         return response.choices[0].message.content.strip()
-
-    # # The URL of the API endpoint
-    # api_url = "https://api.openai.com/v1/engines/davinci-codex/completions"
-
-    # # Your API key for authentication
-    # api_key = "your-api-key"
-
-    # # The headers for the HTTP request
-    # headers = {
-    #     "Authorization": f"Bearer {api_key}",
-    #     "Content-Type": "application/json",
-    # }
-
-    # # The JSON body of the request
-    # payload = {
-    #     "prompt": prompt,
-    #     "max_tokens": max_tokens
-    # }
-
-    # # Make the POST request
-    # response = requests.post(api_url, headers=headers, json=payload)
-
-    # # Check if the request was successful
-    # if response.status_code == 200:
-    #     # Parse the response content
-    #     response_json = response.json()
-    #     # Extract the generated text
-    #     return response_json["choices"][0]["text"].strip()
-    # else:
-    #     # If the request was not successful, print the error
-    #     return f"Error: {response.status_code}, {response.text}"
 
 def create_adversarial_context(context, percentage=50):
     # use call_GPT to generate adversarial context
@@ -85,19 +57,97 @@ def create_adversarial_context(context, percentage=50):
             "Keep the length of output roughly similar to input, but make sure the meaning of the passage doesn't change - "
                 # "Always return a valid JSON in response"
     
-    prompt = prompt + "\n" + context
+    prompt = prompt + context[1]
     
-    adversarial_prompt = call_chatgpt("You are a AI research assistance, working on evaluating Language Models.", context)
-    return adversarial_prompt
+    adversarial_prompt = call_chatgpt("You are a AI research assistance, working on evaluating Language Models.", prompt)
+    return (context[0], adversarial_prompt)
 
 def create_adversarial_contexts(contexts, percentage=20):
     adversarial_contexts = []
     print('Contexts to update - ', len(contexts))
-    for context in contexts:
-        ad_context = create_adversarial_context(context[1], percentage)
-        if not ad_context is None:
-            adversarial_contexts.append((context[0], ad_context))
+
+    with ProcessPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(create_adversarial_context, context, percentage) for context in contexts]
+        for future in as_completed(futures):
+            ad_context = future.result()
+            if not ad_context is None:
+                adversarial_contexts.append(ad_context)
+
+    # for context in contexts:
+    #     ad_context = create_adversarial_context(context[1], percentage)
+    #     if not ad_context is None:
+    #         adversarial_contexts.append((context[0], ad_context))
     return adversarial_contexts
+
+# this batching is not supported by OpenAI with chat completion API
+def create_adversarial_contexts_parallel(contexts, percentage=20):
+    print('Contexts to update - ', len(contexts))
+
+    # create an array of messages to send to the chatbot
+    prompts = []
+    for context in tqdm(contexts):
+        s = "You are a AI research assistance, working on evaluating Language Models."
+        p = "Create an adversarial context for the following passage without changing the meaning."\
+            "You can use techniques like, Paraphrasing, Negation, Noise Injection, Distraction (introducing words like Why, what, who, because etc. in between),"\
+            "Word Swapping(adding synonyms and antonyms) and Contradictions. "\
+            "Keep the length of output roughly similar to input, but make sure the meaning of the passage doesn't change - "
+        p = p + context[1]
+
+        message = [
+            {"role": "system", "content": s},
+            {"role": "user", "content": p},
+        ]
+        prompts.append(message)
+
+    # make call_chatgpt_parallel with 10 messages at once
+    concurrency = 10
+    max_token = 500
+    adversarial_contexts = []
+    for i in tqdm(range(0, len(prompts), concurrency)):
+        batch = prompts[i:i+10]
+
+        response = client.chat.completions.create(
+            model=GPT_MODEL,
+            messages=batch,
+            seed=seed,
+            max_tokens=max_token,
+            temperature=0.9,
+            # response_json=True,
+            # response_format='{ "type": "json_object" }'
+        )
+        if 'error' in response: 
+            print(response['error'])
+            return None 
+        else: 
+            print("ChatGPT request successful with status code: {}".format(response['id']))
+            # the response is sequential
+            # we'll find context index from the id of the response
+            for index, choice in enumerate(response.choices):
+                curr_context = contexts[i+index]
+                adversarial_contexts.append((curr_context[0], choice))
+            
+    return adversarial_contexts
+
+def process_paragraph(paragraph, article):
+    test_set = []
+    for qa in paragraph['qas']:
+        t_set = {}
+        t_set['id'] = qa['id']
+        t_set['title'] = article['title']
+        t_set['context'] = paragraph['context']
+        t_set['question'] = qa['question']
+        text = []
+        ans_start = []
+        for ans in qa['answers']:
+            text.append(ans['text'])
+            ans_start.append(ans['answer_start'])
+            
+        t_set['answers'] = {
+            'text': text,
+            'answer_start': ans_start
+        }
+        test_set.append(t_set)
+    return test_set
 
 def convert_json(in_json):
     test_set = []
@@ -124,6 +174,19 @@ def convert_json(in_json):
 
     return test_set
 
+def process_ad_context(ad_context, squad_data):
+    adv_context = []
+    for article in squad_data['data']:
+        for paragraph in article['paragraphs']:
+            if hash(paragraph['context']) == ad_context[0]:
+                paragraph['context'] = ad_context[1]
+                context_counter += 1
+
+                # we might need to save_only_changed_contexts, save them to adv context file
+                data = process_paragraph(paragraph, article)
+                adv_context.extend(data)
+    return adv_context
+
 def create_adversarial_dataset(original_file_path, adversarial_file_path, percent_context_to_change=20, save_only_changed_contexts=False):
     with open(original_file_path, 'r') as file:
         squad_data = json.load(file)
@@ -137,32 +200,37 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
 
     # extract the first percent_context_to_change% of contexts to change
     num_contexts_to_change = len(contexts) * percent_context_to_change // 100
-    # num_contexts_to_change = 1
     adversarial_contexts = create_adversarial_contexts(contexts[:num_contexts_to_change])
 
-    # Save the adversarial contexts
-    if save_only_changed_contexts:
-        with open(adversarial_file_path, 'w') as file:
-            json.dump(adversarial_contexts, file)
-        return
-
-    # else 
-    # Replace original contexts with adversarial ones
-    # we can use the hash to identify the context
+    # adversarial_contexts = create_adversarial_contexts_parallel(contexts[:num_contexts_to_change])
     context_counter = 0
 
     # The paragraph should be sequential, so the order of following loops 
     # should just be O(n)
+    adversarial_data = []
+
     for ad_context in adversarial_contexts:
         for article in squad_data['data']:
             for paragraph in article['paragraphs']:
                 if hash(paragraph['context']) == ad_context[0]:
                     paragraph['context'] = ad_context[1]
                     context_counter += 1
+
+                    # we might need to save_only_changed_contexts, save them to adv context file
+                    if save_only_changed_contexts:
+                        data = process_paragraph(paragraph, article)
+                        adversarial_data.extend(data)
+
                     break
         if context_counter == num_contexts_to_change:
             break
     
+    
+    if save_only_changed_contexts:
+        with open(adversarial_file_path, 'w') as file:
+            json.dump(adversarial_data, file)
+        return
+
     # convert data to the format required by the model
 
     squad_data = convert_json(squad_data)
@@ -174,7 +242,7 @@ def create_adversarial_dataset(original_file_path, adversarial_file_path, percen
 if __name__ == "__main__":
     # Prompt for a question
     orig_file_path = './Squad/train-v1.1.json'
-    out_file_path = './Squad/train-v1.1-adversarial-50-diff.json'
+    out_file_path = './Squad/train-v1.1-adversarial-50-diff-2.json'
     percent_context_to_change = 50
     create_adversarial_dataset(original_file_path=orig_file_path, 
                                adversarial_file_path=out_file_path,
