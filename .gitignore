@@ -2,3 +2,4 @@
 output/
 trained_model
 trained_model_qa
+nli/trained_model_nli_11_19_1/
