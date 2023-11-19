@@ -59,9 +59,12 @@ def augment_snli_row(batch):
 # define main for file entry
 if __name__ == "__main__":
     split = 'validation'
-    dataset = load_snli('validation')
+    dataset = load_snli(split)
     aug_dataset = augment_snli(dataset)
+    aug_dataset_dict = datasets.DatasetDict(
+        {split: aug_dataset}
+    )
     # aug_dataset = {split: aug_dataset}
     print("saving to disk")
-    aug_dataset.save_to_disk('snli_aug_{split}.hf')
+    aug_dataset_dict.save_to_disk('snli_aug_{split}.hf'.format(split=split))
 
