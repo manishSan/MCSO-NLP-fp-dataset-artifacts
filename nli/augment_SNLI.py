@@ -4,6 +4,7 @@
 
 import datasets
 import nltk
+import numpy as np
 
 def load_snli(split='train'):
     # we might later improve this method to load database from local file
@@ -43,17 +44,36 @@ def augment_snli_row(batch):
         tag_map['V'] = wn.VERB
         tag_map['R'] = wn.ADV
 
-        tokens = word_tokenize(p)
+       
+        # lemmatize premise
         lemmatizer = WordNetLemmatizer()
-
-        for token, tag in pos_tag(tokens):
+        for token, tag in pos_tag(word_tokenize(p)):
             lemma = lemmatizer.lemmatize(token, tag_map[tag[0]])
             p = p.replace(token, lemma)
 
-            # is label is not in {0, 1, 2} the replace it with 0
-            if l not in [0, 1, 2]:
-                l = 0
+        np.random.seed(42)
+        # lemmatize hypothesis
+        for token, tag in pos_tag(word_tokenize(h)):
+            lemma = lemmatizer.lemmatize(token, tag_map[tag[0]])
+
+            # skip noun pos
+            if tag_map[tag[0]] == wn.NOUN:
+                continue
+
+            # find synonyms for the word
+            synonyms = wn.synonyms(lemma)
+            # filter synonyms to remove empty arrays 
+            synonyms = [s for s in synonyms if len(s) > 0]
+            if len(synonyms) > 0:
+                # uniformly choose a synonym
+                np.random.shuffle(synonyms)
+                synonym = synonyms[0][0]
+                h = h.replace(token, synonym)
         
+        # is label is not in {0, 1, 2} the replace it with 0
+        if l not in [0, 1, 2]:
+            l = 0
+
         output['premise'].append(p)
         output['hypothesis'].append(h)
         output['label'].append(l)
