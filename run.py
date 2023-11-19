@@ -62,6 +62,10 @@ def main():
         # so if we want to use a jsonl file for evaluation we need to get the "train" split
         # from the loaded dataset
         eval_split = 'train'
+    elif args.dataset.endswith('.arrow'):
+        dataset_id = None
+        # special case to load data set from arrow files
+        dataset = datasets.load_dataset('arrow', data_files=args.dataset)
     else:
         default_datasets = {'qa': ('squad',), 'nli': ('snli',)}
         dataset_id = tuple(args.dataset.split(':')) if args.dataset is not None else \
