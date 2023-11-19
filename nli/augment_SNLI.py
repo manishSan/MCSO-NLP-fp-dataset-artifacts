@@ -49,6 +49,10 @@ def augment_snli_row(batch):
         for token, tag in pos_tag(tokens):
             lemma = lemmatizer.lemmatize(token, tag_map[tag[0]])
             p = p.replace(token, lemma)
+
+            # is label is not in {0, 1, 2} the replace it with 0
+            if l not in [0, 1, 2]:
+                l = 0
         
         output['premise'].append(p)
         output['hypothesis'].append(h)
@@ -67,4 +71,5 @@ if __name__ == "__main__":
     # aug_dataset = {split: aug_dataset}
     print("saving to disk")
     aug_dataset_dict.save_to_disk('snli_aug_{split}.hf'.format(split=split))
+    aug_dataset.to_json('snli_aug_{split}.json'.format(split=split))
 
