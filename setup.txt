@@ -50,5 +50,5 @@ df -h
 `python3 run.py --do_eval --task nli --dataset snli --model ./nli/trained_model_nil_11_19_1 --output_dir ./nli/eval_output_11_19_1`
 
 # eval NLI with arrow dataset
-`python3 run.py --do_eval --task nli --dataset ./nli/snli_aug.hf/data-00000-of-00001.arrow --model ./nli/trained_model_nil_11_19_1 --output_dir ./nli/eval_output_11_19_1`
+`python3 run.py --do_eval --task nli --dataset ./nli/snli_aug.hf/data-00000-of-00001.arrow --model nli/trained_model_nli_11_19_1 --output_dir ./nli/eval_output_11_19_1`
 

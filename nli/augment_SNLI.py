@@ -16,7 +16,10 @@ def augment_snli(dataset, n_aug=10):
     import nltk
     nltk.download('wordnet')
     nltk.download('averaged_perceptron_tagger')
-    updated_dataset = dataset.map(augment_snli_row, batched=True, batch_size=64, remove_columns=dataset.column_names, num_proc=1)
+    nltk.download('punkt')
+    
+    print(f"Augmenting {dataset.num_rows} rows of SNLI dataset")
+    updated_dataset = dataset.map(augment_snli_row, batched=True, batch_size=64, num_proc=1)
     return updated_dataset
 
 def augment_snli_row(batch):
@@ -55,8 +58,10 @@ def augment_snli_row(batch):
 
 # define main for file entry
 if __name__ == "__main__":
+    split = 'validation'
     dataset = load_snli('validation')
     aug_dataset = augment_snli(dataset)
-    aug_dataset[:10]
-    aug_dataset.save_to_disk('snli_aug.json')
+    # aug_dataset = {split: aug_dataset}
+    print("saving to disk")
+    aug_dataset.save_to_disk('snli_aug_{split}.hf')
 
